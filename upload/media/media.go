@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -169,7 +170,8 @@ func getSupportedFormats() []string {
 func generateObjectName(originalName string) string {
 	ext := filepath.Ext(originalName)
 	name := strings.TrimSuffix(originalName, ext)
-	timestamp := fmt.Sprintf("%d", http.TimeFormat) // 简化示例，实际应该用时间戳
+	// 修复：使用当前时间的纳秒级时间戳确保唯一性
+	timestamp := fmt.Sprintf("%d", time.Now().UnixNano())
 	return fmt.Sprintf("video-%s-%s%s", name, timestamp, ext)
 }
 
@@ -203,14 +205,14 @@ func ensureBucketExists(ctx context.Context, bucketName string) error {
 		if err != nil {
 			return err
 		}
-		// 设置存储桶策略为公开读取（可选）
+		// 设置存储桶策略为公开读取（修复了Action中的空格问题）
 		policy := `{
 			"Version": "2012-10-17",
 			"Statement": [
 				{
 					"Effect": "Allow",
 					"Principal": {"AWS": ["*"]},
-					"Action": ["  s3:GetObject"],
+					"Action": ["s3:GetObject"],
 					"Resource": ["arn:aws:s3:::` + bucketName + `/*"]
 				}
 			]
